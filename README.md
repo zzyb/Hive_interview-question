@@ -45,7 +45,7 @@
 
 ```
 
-![](/Users/zhangyanbo/Downloads/sum.png)
+![](png/sum.png)
 
 <u>**注意看，rows between 之后的内容与统计出来的结果。（多理解一下）**</u>
 
@@ -94,5 +94,5 @@
 
 - 查询结果展示
 
-  ![](/Users/zhangyanbo/Downloads/sum1.png)
+  ![](png/sum1.png)
 
