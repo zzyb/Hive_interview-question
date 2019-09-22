@@ -23,7 +23,7 @@
 
 关键是理解ROWS BETWEEN含义,也叫做WINDOW子句：
 
-| preceding：往前         | <u>3 preceding（前三行）</u>     |
+| **preceding：往前**     | <u>3 preceding（前三行）</u>     |
 | ----------------------- | -------------------------------- |
 | **following：往后**     | **<u>1 following</u>（后一行）** |
 | **current row：当前行** | **<u>current row</u>（当前行）** |
