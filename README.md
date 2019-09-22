@@ -9,12 +9,15 @@
 
 
 
-[窗口分析]: interview-question/窗口分析.md	"窗口分析"
+## 窗口分析
+
+[窗口分析](interview-question/窗口分析.md)
 
 ## 自连接
 
 ## group by
 
 ## 行列转换
-求TopN
+
+## 求TopN
 
