@@ -17,9 +17,9 @@
 
  sum(求和字段) over (partition by 分组字段 order by 排序字段 **rows between** <u>unbounded preceding</u> **and** <u>current row</u>) as pv1
 
-| **如果不指定** **rows** **between** | 默认为从起点到当前行;     |
+| **如果不指定** **rows** **between** | **默认为从起点到当前行;**     |
 | ----------------------------------- | ------------------------- |
-| **如果不指定 ** **order**  **by**   | **则将分组内所有值累加;** |
+| **如果不指定** **order**  **by**    | **则将分组内所有值累加;** |
 
 关键是理解ROWS BETWEEN含义,也叫做WINDOW子句：
 
@@ -28,7 +28,7 @@
 | **following：往后**     | **<u>1 following</u>（后一行）** |
 | **current row：当前行** | **<u>current row</u>（当前行）** |
 
-| <u>unbounded preceding.</u>         (表示从前面的起点)       |      |
+| **<u>unbounded preceding.</u>           (表示从前面的起点)** |      |
 | ------------------------------------------------------------ | ---- |
 | **<u>unbounded following</u>.           (表示到后面的终点)** |      |
 
