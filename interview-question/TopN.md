@@ -2,7 +2,7 @@
 
 #### 初识row_number()函数
 
-- **函数语法：**row_number()  over(**partition by**分组字段 **order by**排序字段 **desc**) as rn
+- **函数语法:** row_number()  over(**partition by**分组字段 **order by**排序字段 **desc**) as rn
 
 - 解释：指定分组字段、排序字段以及排序规则，返回分组内排序。
 
