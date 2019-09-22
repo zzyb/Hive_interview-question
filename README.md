@@ -15,7 +15,7 @@
 
 ## 行列转换
 
-[列转行](interview-question/列转行.md)
+[行转列](interview-question/行转列.md)
 
 ## 求TopN
 
