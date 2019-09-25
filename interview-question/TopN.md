@@ -237,7 +237,12 @@ where rn=1;
 这里给出简要思路不在赘述。（如图）
 
 ![](../png/面试题5_2.png)
+<<<<<<< Updated upstream
 
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
 
 ### 第六道面试题
 
@@ -391,4 +396,8 @@ from
 
 此时，已经按照爱好分组、年龄排序，进一步筛选index即可。（where index<=2代表前两名）
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> yber_change
+>>>>>>> Stashed changes
