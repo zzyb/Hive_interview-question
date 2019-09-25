@@ -237,3 +237,156 @@ where rn=1;
 这里给出简要思路不在赘述。（如图）
 
 ![](../png/面试题5_2.png)
+
+### 第六道面试题
+
+#### 需求、数据、建表等
+
+- 需求：编写Hive的HQL语句
+
+  1、求出每种爱好中，年龄最大的人
+
+  2、列出每个爱好年龄最大的两个人，并且列出名字。
+
+- 元数据. (id        name        age        favors)
+
+  ```
+  1,huangbo,45,a-c-d-f
+  2,xuzheng,36,b-c-d-e
+  3,huanglei,41,c-d-e
+  4,liushishi,22,a-d-e
+  5,liudehua,39,e-f-d
+  6,liuyifei,35,a-d-e
+  ```
+
+- 建表、导入数据
+
+  ```sql
+  create table if not exists aihao(id int, name string,age int,favors string) row format delimited fields terminated by ",";
+  
+  load data local inpath "/home/hadoop/hivedata2/aihao" into table aihao;
+  ```
+
+#### 思路与实现步骤
+
+- 思路分析
+
+**数据**：一个人对应多种爱好（**一对多**）
+
+**需求**：为了求出爱好中的年龄最大的人（**从多中找出一**）
+
+**方法**：[行转列]()
+
+采用**炸裂函数** **explode** 、**字符分割函数** **split**
+
+同时采用**虚拟视图技术** **lateral view**
+
+- 实现步骤（第一问）
+
+**语句1**：
+
+```sql
+select a.id as id, a.name as name, a.age as age,  favor_view.favor 
+from favors a
+lateral view explode(split(a.favors, "-")) favor_view as favor; 
+```
+
+**结果1**：
+
+| id   | name      | age  | favor_view.favor |
+| ---- | --------- | ---- | ---------------- |
+| 1    | huangbo   | 45   | a                |
+| 1    | huangbo   | 45   | c                |
+| 1    | huangbo   | 45   | d                |
+| 1    | huangbo   | 45   | f                |
+| 2    | xuzheng   | 36   | b                |
+| 2    | xuzheng   | 36   | c                |
+| 2    | xuzheng   | 36   | d                |
+| 2    | xuzheng   | 36   | e                |
+| 3    | huanglei  | 41   | c                |
+| 3    | huanglei  | 41   | d                |
+| 3    | huanglei  | 41   | e                |
+| 4    | liushishi | 22   | a                |
+| 4    | liushishi | 22   | d                |
+| 4    | liushishi | 22   | e                |
+| 5    | liudehua  | 39   | e                |
+| 5    | liudehua  | 39   | f                |
+| 5    | liudehua  | 39   | d                |
+| 6    | liuyifei  | 35   | a                |
+| 6    | liuyifei  | 35   | d                |
+| 6    | liuyifei  | 35   | e                |
+
+**语句2**：
+
+对语句1的结果进一步操作：
+
+筛选爱好、max(年龄);并以爱好分组。
+
+```sql
+select aa.favor, max(aa.age) as maxage 
+from 
+  (
+  select a.id as id, a.name as name, a.age as age,  favor_view.favor 
+  from exercise5 a
+  lateral view explode(split(a.favors, "-")) favor_view as favor
+  ) aa 
+group by aa.favor; 
+```
+
+**结果2**:
+
+| 爱好 | 年龄 |
+| ---- | ---- |
+| a    | 45   |
+| b    | 36   |
+| c    | 45   |
+| d    | 45   |
+| e    | 41   |
+| f    | 45   |
+
+- 实现步骤（第二问）
+
+**语句1**：
+
+```sql
+select 
+  aa.id, 
+  aa.name, 
+  aa.age, 
+  aa.favor, 
+  row_number() over (distribute by aa.favor sort by aa.age desc) as index 
+from 
+  (
+  select a.id as id, a.name as name, a.age as age, favor_view.favor 
+  from favors a
+  lateral view explode(split(a.favors, "-")) favor_view as favor
+  ) aa ; 
+```
+
+**结果1**：
+
+| Id     名字       | 年龄  爱好 index |
+| ----------------- | ---------------- |
+| 1      huangbo    | 45      a      1 |
+| 6       liuyifei  | 35      a      2 |
+| 4       liushishi | 22      a      3 |
+| 2      xuzheng    | 36      b      1 |
+| 1      huangbo    | 45      c      1 |
+| 3       huanglei  | 41      c      2 |
+| 2      xuzheng    | 36      c      3 |
+| 1      huangbo    | 45      d      1 |
+| 3       huanglei  | 41      d      2 |
+| 5       liudehua  | 39      d      3 |
+| 2      xuzheng    | 36      d      4 |
+| 6       liuyifei  | 35      d      5 |
+| 4       liushishi | 22      d      6 |
+| 3       huanglei  | 41      e      1 |
+| 5       liudehua  | 39      e      2 |
+| 2      xuzheng    | 36      e      3 |
+| 6       liuyifei  | 35      e      4 |
+| 4       liushishi | 22      e      5 |
+| 1      huangbo    | 45      f      1 |
+| 5       liudehua  | 39      f      2 |
+
+此时，已经按照爱好分组、年龄排序，进一步筛选index即可。（where index<=2代表前两名）
+
