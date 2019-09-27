@@ -86,12 +86,12 @@
    ```sql
    select a.id as id,a.month as month,sum(income) as sum_in,sum(a.cost) as sum_ct,(sum(income)-sum(a.cost)) as jing,avg(a.cost) as avg_cost
    from
-   (
-   select id,income,cost,substring(p_date,1,4) as year,substring(p_date,6,2) as month,substring(p_date,9,2) as day
-   from product
-   where substring(p_date,1,4)='2018'
-   order by id,month,day 
-   ) a
+     (
+     select id,income,cost,substring(p_date,1,4) as year,substring(p_date,6,2) as month,substring(p_date,9,2) as day
+     from product
+     where substring(p_date,1,4)='2018'
+     order by id,month,day 
+     ) a
    group by a.id,a.month;
    ```
 
@@ -106,23 +106,23 @@
    ```sql
    select aa.aid as id,aa.bday as day,(aa.bcost-aa.acost) as difference
    from
-   (
-   select a.id as aid,a.cost as acost,a.day as aday,b.cost as bcost,b.day as bday from 
-   (
-   select id,income,cost,substring(p_date,1,4) as year,substring(p_date,6,2) as month,substring(p_date,9,2) as day
-   from product
-   where substring(p_date,6,2)='03' and substring(p_date,1,4)='2018'
-   order by id,month,day
-   ) a
-   left join
-   (
-   select id,income,cost,substring(p_date,1,4) as year,substring(p_date,6,2) as month,substring(p_date,9,2) as day
-   from product
-   where substring(p_date,6,2)='03' and substring(p_date,1,4)='2018'
-   order by id,month,day
-   ) b
-   on a.id=b.id and a.month=b.month and a.day=b.day-1
-   ) aa
+     (
+     select a.id as aid,a.cost as acost,a.day as aday,b.cost as bcost,b.day as bday from 
+       (
+       select id,income,cost,substring(p_date,1,4) as year,substring(p_date,6,2) as month,substring(p_date,9,2) as day
+       from product
+       where substring(p_date,6,2)='03' and substring(p_date,1,4)='2018'
+       order by id,month,day
+       ) a
+     left join
+       (
+       select id,income,cost,substring(p_date,1,4) as year,substring(p_date,6,2) as month,substring(p_date,9,2) as day
+       from product
+       where substring(p_date,6,2)='03' and substring(p_date,1,4)='2018'
+       order by id,month,day
+       ) b
+     on a.id=b.id and a.month=b.month and a.day=b.day-1
+     ) aa
    where aa.bcost is not null;
    ```
 
@@ -156,19 +156,19 @@
    ```sql
    select a.id as id,a.income as income,a.cost as cost,a.month as month,a.day as day
    from
-   (
-   select id,income,cost,substring(p_date,6,2) as month,substring(p_date,9,2) as day
-   from product
-   where substring(p_date,6,2)='04' and substring(p_date,1,4)='2018'
-   order by id,month,day 
-   ) a
+     (
+     select id,income,cost,substring(p_date,6,2) as month,substring(p_date,9,2) as day
+     from product
+     where substring(p_date,6,2)='04' and substring(p_date,1,4)='2018'
+     order by id,month,day 
+     ) a
    join 
-   (
-   select id,income,
-   row_number() over(order by income desc) as index
-   from product
-   where substring(p_date,6,2)='04' and substring(p_date,1,4)='2018'
-   ) b
+     (
+     select id,income,
+     row_number() over(order by income desc) as index
+     from product
+     where substring(p_date,6,2)='04' and substring(p_date,1,4)='2018'
+     ) b
    on a.id =b.id 
    where b.index=1
    ```
