@@ -112,9 +112,9 @@ dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as 
 | ------------------------------------- | ------------------- |
 | substring(2015011023,1,4)             | 2015                |
 
-### 第六道面试题
+## 第六道面试题
 
-#### 需求、数据、建表等
+### 需求、数据、建表等
 
 - 需求：编写Hive的HQL语句
 
@@ -181,7 +181,7 @@ dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as 
   load data local inpath "/root/yber/data/temperature_data.txt" into table temperature;
   ```
 
-#### 思路与实现步骤
+### 思路与实现步骤
 
 - 思路
 
@@ -190,49 +190,52 @@ dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as 
   | substring(字符串，起始位置，截取长度) | 起始位置从1开始计算 |
   | ------------------------------------- | ------------------- |
   | substring(2015011023,1,4)             | 2015                |
+  | substring(2015011023,9)               | 23                  |
 
 - 实现步骤
 
-  - 第一题
-
-    求出每一年的最高温度（年份，最高温度）
+  - 第一题：求出每一年的最高温度（年份，最高温度）
 
     ```sql
-    select substring(line,1,4) as years,max(substring(line,9)) as max_cc from wendu group by substring(line,1,4);
-    
-    ```
-
-    ![](../png/面试图5_1.png)
-
-  - 第二题
-
-    求出每一年的最高温度是那一天（日期， 最高温度）
-
-    ```sql
-    select bb.year as year, bb.dt as dt, bb.temp as maptemp 
+    select 
+      substring(line,1,4) as year, 
+      max(substring(line,9)) as temperature 
     from 
-    	(
-    		select 
-    		aa.year as year, 
-    		aa.dt as dt,
-    		aa.temp as temp, 
-    		row_number() over (partition by aa.year order by aa.temp desc) as index 
-    		from
-    			(
-    			select 
-    			substring(a.line,1,4) as year,
-    			substring(a.line, 1, 8) as dt,
-    			substring(a.line, 9, 2) as temp  
-    			from wendu a 
-    			) aa
-    ) bb where bb.index <= 1;
+      temperature 
+    group by 
+      substring(line,1,4);
     ```
-
-    <u>最内层循环</u>---将字符串分隔成「年、月日、温度」
-
-    <u>第二层循环</u>---利用row_number()函数，查询「年、月日、温度、排序（排序按年分组，按温度高低排序）」
-
-    <u>最外层循环</u>---查询结果，并使用where限制需要查询的温度「topN就where index<=n」
+  
+    ```
+    2001	29
+    2007	99
+    2008	37
+    2010	17
+    2012	32
+    2013	29
+    2014	17
+    2015	99
+    ```
+  
+  - 第二题：求出每一年的最高温度是哪一天（日期， 最高温度）
+  
+    ```sql
+    select a.year,a.dt,a.temperature,a.index
+    from (
+      select 
+      substring(line,1,4) as year,
+      substring(line,5,4) as dt,
+      substring(line,9) as temperature,
+      row_number() over(partition by substring(line,1,4) order by substring(line,9) desc) as index
+      from 
+    temperature
+    ) a 
+    where a.index <=1
+    ```
+    
+    <u>内层</u>---利用row_number()函数、substring()函数，查询「年、月日、温度、排序（排序按年分组，按温度高低排序）」
+    
+    <u>外层</u>---查询结果，并使用where限制需要查询的温度「topN就where index<=n」
 
 **第二题的另一种解法：连接查询**
 
@@ -240,17 +243,17 @@ dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as 
 
 ![](../png/面试题5_2.png)
 
-### 第七道面试题
+## 第七道面试题
 
-#### 需求、数据、建表等
+### 需求、数据、建表等
 
 - 需求：编写Hive的HQL语句
 
-  1、求出每种爱好中，年龄最大的人
+  1、**求出每种爱好中，年龄最大的人**
 
-  2、列出每个爱好年龄最大的两个人，并且列出名字。
+  2、**列出每个爱好年龄最大的两个人，并且列出名字。**
 
-- 元数据. (id        name        age        favors)
+- 数据： (id，name，age，favors)
 
   ```
   1,huangbo,45,a-c-d-f
@@ -264,12 +267,16 @@ dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as 
 - 建表、导入数据
 
   ```sql
-  create table if not exists aihao(id int, name string,age int,favors string) row format delimited fields terminated by ",";
+  -- 创建表并指定字段分隔符为逗号（，）
+  create table if not exists interest(id int, name string,age int,favors string) row format delimited fields terminated by ",";
   
-  load data local inpath "/home/hadoop/hivedata2/aihao" into table aihao;
+  -- 准备数据，放置在服务器文件系统或HDFS。此处放在服务器文件系统上（/opt/zyb/data/interest_data.txt）
+  
+  -- 加载数据到表
+  load data local inpath "/opt/zyb/data/interest_data.txt" into table interest;
   ```
 
-#### 思路与实现步骤
+### 思路与实现步骤
 
 - 思路分析
 
@@ -283,7 +290,7 @@ dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as 
 
 同时采用**虚拟视图技术** **lateral view**
 
-- 实现步骤（第一问）
+- 实现步骤（求出每种爱好中，年龄最大的人）
 
 **语句1**：
 
