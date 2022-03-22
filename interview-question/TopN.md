@@ -1,16 +1,15 @@
-### 窗口函数-几个序列函数
+# TOP类型
 
-#### 初识row_number()函数
+## 窗口函数：序列函数
 
-- **函数语法:** row_number()  over(**partition by**分组字段 **order by**排序字段 **desc**) as rn
+### 初识row_number()函数
 
+- **函数语法:** `row_number()  over(partition by 分组字段 order by 排序字段 desc/asc) as rn`
 - 解释：指定分组字段、排序字段以及排序规则，返回分组内排序。
-
 - 应用场景：常常用来排序后，筛选出topN。
-
 - 事例：
 
-  数据格式：（cookieid string, createtime string, pv int）
+数据：（cookie_id, create_time , pv）
 
 ```
 cookie1,2015-04-10,1
@@ -29,52 +28,57 @@ cookie2,2015-04-15,9
 cookie2,2015-04-16,7
 ```
 
-​		创建表、导入数据：
+创建表、导入数据：
 
 ```sql
-create table cookie(cookieid string, createtime string, pv int) row format delimited fields terminated by ',';
-load data local inpath "/home/hadoop/cookie.txt" into table cookie;
+-- 创建表并指定字段分隔符为逗号（，）
+create table cookie(cookie_id string, create_time string, pv int) row format delimited fields terminated by ',';
+
+-- 准备数据，放置在服务器文件系统或HDFS。此处放在服务器文件系统上（/root/yber/data/cookie_data.txt）
+
+-- 加载数据到表
+load data local inpath "/root/yber/data/cookie_data.txt" into table cookie;
 ```
 
-​		查询语句：
+查询语句：
 
 ```sql
 select
-  cookieid,
-  createtime,
-  pv,
-  row_number() over (partition by cookieid order by pv desc) as rn
+ cookie_id,
+ create_time,
+ pv,
+ row_number() over (partition by cookie_id order by pv desc) as rn 
 from 
-	cookie2;
+cookie;
 ```
 
-​		查询结果：
-
-​		按照cookie1、cookie2分为了两组，组内分别按照<u>访问量pv</u>排序
+查询结果：按照cookie1、cookie2分为了两组，组内分别按照<u>访问量pv</u>排序，排序结果定义为rn。
 
 ![](../png/row_number2.png)
 
-​		进一步求每一组的top 1访问记录：
+进一步求每一组的top 1访问记录：
 
 ```sql
-select aa.cookieid,aa.createtime,aa.pv
+select aa.cookie_id,aa.create_time,aa.pv
 from
 (select
-  cookieid,
-  createtime,
-  pv,
-  row_number() over (partition by cookieid order by pv desc) as rn
-from cookie2) aa
+ cookie_id,
+ create_time,
+ pv,
+ row_number() over (partition by cookie_id order by pv desc) as rn
+from cookie) aa
 where rn=1;
 ```
 
-​		结果：
+结果：
 
 ![](../png/面试题4_2.png)
 
 ​			
 
-#### 几种常用的序列函数比较
+### 几种常用的序列函数比较
+
+#### 语法结构
 
 ##### row_number()
 
@@ -82,37 +86,31 @@ where rn=1;
 
 ##### dense_rank()
 
-- 语法结构：
+```sql
+row_number() over(partition by 分组字段 order by 排序字段  desc/asc) as rn
+rank() over(partition by 分组字段 order by 排序字段  desc/asc) as rn
+dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as rn
+```
 
-  ```sql
-  row_number() over(partition by 分组字段 order by 排序字段  desc/asc) as rn
-  rank() over(partition by 分组字段 order by 排序字段  desc/asc) as rn
-  dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as rn
-  ```
+#### 用法
 
-- 用法：row_number()基本一致，不同地方如下表所示
+<u>row_number()基本一致，不同地方如下表所示</u>
 
-| row_number： 按**顺序**编号，**不留空位** | （**重复也按顺序写下去**） |
-| ----------------------------------------- | -------------------------- |
-|                                           | 1-2-3-4-5....              |
-
- 
-
-| rank： 按**顺序**编号，**相同**的值编相**同号**，**留空位** | （**并列第一，就没有第二了**） |
-| ----------------------------------------------------------- | ------------------------------ |
-|                                                             | 1-1-3-4-5....                  |
-
- 
-
-| dense_rank： 按**顺序**编号，**相同**的值编**相同的号**，**不留**空位 | **（并列第一，接下来第二）** |
-| ------------------------------------------------------------ | ---------------------------- |
-|                                                              | 1-1-2-3-4....                |
-
-
+| 函数                                                         | 说明                           | 示例          |
+| ------------------------------------------------------------ | ------------------------------ | ------------- |
+| row_number： 按**顺序**编号，**不留空位**                    | （**重复也按顺序写下去**）     | 1-2-3-4-5.... |
+| rank： 按**顺序**编号，**相同**的值编相**同号**，**留空位**  | （**并列第一，就没有第二了**） | 1-1-3-4-5.... |
+| dense_rank： 按**顺序**编号，**相同**的值编**相同的号**，**不留**空位 | **（并列第一，接下来第二）**   | 1-1-2-3-4.... |
 
 ![](../png/row_number.png)
 
+## 其他函数
 
+### 字符串分割函数
+
+| substring(字符串，起始位置，截取长度) | 起始位置从1开始计算 |
+| ------------------------------------- | ------------------- |
+| substring(2015011023,1,4)             | 2015                |
 
 ### 第六道面试题
 
@@ -124,7 +122,7 @@ where rn=1;
 
   2、求出每一年的最高温度是那一天（日期， 最高温度）
 
-- 元数据. (line-String)
+- 数据： (line)
 
   比如：2010012325表示在2010年01月23日的气温为25度。
 
@@ -174,9 +172,13 @@ where rn=1;
 - 建表、导入数据
 
   ```sql
-  create table if not exists wendu(line string) row format delimited fields terminated by ",";
+  -- 创建表并指定字段分隔符为逗号（，）
+  create table if not exists temperature(line string) row format delimited fields terminated by ",";
   
-  load data local inpath "/home/hadoop/wendu.txt" into table wendu;
+  -- 准备数据，放置在服务器文件系统或HDFS。此处放在服务器文件系统上（/root/yber/data/temperature_data.txt）
+  
+  -- 加载数据到表
+  load data local inpath "/root/yber/data/temperature_data.txt" into table temperature;
   ```
 
 #### 思路与实现步骤
@@ -237,12 +239,6 @@ where rn=1;
 这里给出简要思路不在赘述。（如图）
 
 ![](../png/面试题5_2.png)
-<<<<<<< Updated upstream
-
-=======
-<<<<<<< HEAD
-=======
->>>>>>> Stashed changes
 
 ### 第七道面试题
 
@@ -395,9 +391,3 @@ from
 | 5       liudehua  | 39      f      2 |
 
 此时，已经按照爱好分组、年龄排序，进一步筛选index即可。（where index<=2代表前两名）
-
-<<<<<<< Updated upstream
-
-=======
->>>>>>> yber_change
->>>>>>> Stashed changes
