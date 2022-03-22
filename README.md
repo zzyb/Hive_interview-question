@@ -7,8 +7,6 @@
     自连接
     group by
 
-
-
 ## 窗口分析
 
 [窗口分析](interview-question/窗口分析.md)
