@@ -290,111 +290,131 @@ dense_rank() over(partition by 分组字段 order by 排序字段  desc/asc) as 
 
 同时采用**虚拟视图技术** **lateral view**
 
-- 实现步骤（求出每种爱好中，年龄最大的人）
+- 实现步骤
 
 **语句1**：
 
 ```sql
-select a.id as id, a.name as name, a.age as age,  favor_view.favor 
-from favors a
-lateral view explode(split(a.favors, "-")) favor_view as favor; 
+-- 利用虚拟视图将爱好 列转行。
+select id,name,age,t2.favor
+from 
+interest 
+lateral view explode(split(favors,"-"))t2 as favor;
 ```
 
 **结果1**：
 
-| id   | name      | age  | favor_view.favor |
-| ---- | --------- | ---- | ---------------- |
-| 1    | huangbo   | 45   | a                |
-| 1    | huangbo   | 45   | c                |
-| 1    | huangbo   | 45   | d                |
-| 1    | huangbo   | 45   | f                |
-| 2    | xuzheng   | 36   | b                |
-| 2    | xuzheng   | 36   | c                |
-| 2    | xuzheng   | 36   | d                |
-| 2    | xuzheng   | 36   | e                |
-| 3    | huanglei  | 41   | c                |
-| 3    | huanglei  | 41   | d                |
-| 3    | huanglei  | 41   | e                |
-| 4    | liushishi | 22   | a                |
-| 4    | liushishi | 22   | d                |
-| 4    | liushishi | 22   | e                |
-| 5    | liudehua  | 39   | e                |
-| 5    | liudehua  | 39   | f                |
-| 5    | liudehua  | 39   | d                |
-| 6    | liuyifei  | 35   | a                |
-| 6    | liuyifei  | 35   | d                |
-| 6    | liuyifei  | 35   | e                |
+```
+id|name     |age|favor|
+--+---------+---+-----+
+ 1|huangbo  | 45|a    |
+ 1|huangbo  | 45|c    |
+ 1|huangbo  | 45|d    |
+ 1|huangbo  | 45|f    |
+ 2|xuzheng  | 36|b    |
+ 2|xuzheng  | 36|c    |
+ 2|xuzheng  | 36|d    |
+ 2|xuzheng  | 36|e    |
+ 3|huanglei | 41|c    |
+ 3|huanglei | 41|d    |
+ 3|huanglei | 41|e    |
+ 4|liushishi| 22|a    |
+ 4|liushishi| 22|d    |
+ 4|liushishi| 22|e    |
+ 5|liudehua | 39|e    |
+ 5|liudehua | 39|f    |
+ 5|liudehua | 39|d    |
+ 6|liuyifei | 35|a    |
+ 6|liuyifei | 35|d    |
+ 6|liuyifei | 35|e    |
+```
 
 **语句2**：
 
 对语句1的结果进一步操作：
 
-筛选爱好、max(年龄);并以爱好分组。
-
 ```sql
-select aa.favor, max(aa.age) as maxage 
+-- 利用row_number函数列出每个爱好的年龄排名
+select 
+  id,
+  name,
+  age,
+  t2.favor as favor,
+  row_number() over(partition by t2.favor order by age desc) as rn
 from 
-  (
-  select a.id as id, a.name as name, a.age as age,  favor_view.favor 
-  from exercise5 a
-  lateral view explode(split(a.favors, "-")) favor_view as favor
-  ) aa 
-group by aa.favor; 
+  interest 
+  lateral view explode(split(favors,"-"))t2 as favor
 ```
 
 **结果2**:
 
-| 爱好 | 年龄 |
-| ---- | ---- |
-| a    | 45   |
-| b    | 36   |
-| c    | 45   |
-| d    | 45   |
-| e    | 41   |
-| f    | 45   |
-
-- 实现步骤（第二问）
-
-**语句1**：
-
-```sql
-select 
-  aa.id, 
-  aa.name, 
-  aa.age, 
-  aa.favor, 
-  row_number() over (distribute by aa.favor sort by aa.age desc) as index 
-from 
-  (
-  select a.id as id, a.name as name, a.age as age, favor_view.favor 
-  from favors a
-  lateral view explode(split(a.favors, "-")) favor_view as favor
-  ) aa ; 
+```
+id	name		age	favor	rn
+1	huangbo		45	a		1
+6	liuyifei	35	a		2
+4	liushishi	22	a		3
+2	xuzheng		36	b		1
+1	huangbo		45	c		1
+3	huanglei	41	c		2
+2	xuzheng		36	c		3
+1	huangbo		45	d		1
+3	huanglei	41	d		2
+5	liudehua	39	d		3
+2	xuzheng		36	d		4
+6	liuyifei	35	d		5
+4	liushishi	22	d		6
+3	huanglei	41	e		1
+5	liudehua	39	e		2
+2	xuzheng		36	e		3
+6	liuyifei	35	e		4
+4	liushishi	22	e		5
+1	huangbo		45	f		1
+5	liudehua	39	f		2
 ```
 
-**结果1**：
+此时，已经按照爱好分组、年龄排序，进一步筛选index即可。
 
-| Id     名字       | 年龄  爱好 index |
-| ----------------- | ---------------- |
-| 1      huangbo    | 45      a      1 |
-| 6       liuyifei  | 35      a      2 |
-| 4       liushishi | 22      a      3 |
-| 2      xuzheng    | 36      b      1 |
-| 1      huangbo    | 45      c      1 |
-| 3       huanglei  | 41      c      2 |
-| 2      xuzheng    | 36      c      3 |
-| 1      huangbo    | 45      d      1 |
-| 3       huanglei  | 41      d      2 |
-| 5       liudehua  | 39      d      3 |
-| 2      xuzheng    | 36      d      4 |
-| 6       liuyifei  | 35      d      5 |
-| 4       liushishi | 22      d      6 |
-| 3       huanglei  | 41      e      1 |
-| 5       liudehua  | 39      e      2 |
-| 2      xuzheng    | 36      e      3 |
-| 6       liuyifei  | 35      e      4 |
-| 4       liushishi | 22      e      5 |
-| 1      huangbo    | 45      f      1 |
-| 5       liudehua  | 39      f      2 |
+（where index<=2代表前两名）
 
-此时，已经按照爱好分组、年龄排序，进一步筛选index即可。（where index<=2代表前两名）
+（where index<=1代表年龄最大的一个人）
+
+```sql
+-- 此处列出每种爱好年龄最大的两个人。
+select * from (
+  select 
+    id,
+    name,
+    age,
+    t2.favor as favor,
+    row_number() over(partition by t2.favor order by age desc) as rn
+  from 
+    interest 
+    lateral view explode(split(favors,"-"))t2 as favor
+) a
+where rn <=2;
+```
+
+
+
+**补充：不用row_number，完成第一问。**
+
+```sql
+select favor,max(age) as max_favor_person from (
+  select id,name,age,t2.favor as favor
+  from 
+  interest 
+  lateral view explode(split(favors,"-"))t2 as favor
+) a
+group by favor
+```
+
+```
+favor	max_favor_person
+a		45
+b		36
+c		45
+d		45
+e		41
+f		45
+```
+
