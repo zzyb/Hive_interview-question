@@ -1,5 +1,10 @@
 # Hive_interview-question
-总结典型的hive面试题
+**总结典型的hive面试题**。
+
+SQL面试题
+
+HQL面试题
+
 ## 需求分类：
     窗口分析
     行列转换
